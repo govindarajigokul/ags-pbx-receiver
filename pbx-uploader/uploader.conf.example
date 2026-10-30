@@ -1,0 +1,11 @@
+# Copy to uploader.conf (same folder as pbx_uploader.py) and fill in TOKEN + ENDPOINT.
+# TOKEN must match this PBX's entry in the receiver's PBX_TOKENS. Keep it secret.
+TOKEN=
+ENDPOINT=https://pbx.example.com/v1/pbx/recordings
+MONITOR_DIR=/var/spool/asterisk/monitor
+# Seconds between sweeps when run with --daemon
+INTERVAL=120
+# Skip recordings shorter than this many seconds
+MIN_SECS=5
+# First run: ignore recordings older than this many days
+MAX_AGE_DAYS=30

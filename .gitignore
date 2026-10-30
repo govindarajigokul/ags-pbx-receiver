@@ -1,0 +1,8 @@
+node_modules/
+data/
+.env
+__pycache__/
+pbx-uploader/uploader.conf
+pbx-uploader/sent.txt
+pbx-uploader/uploader.lock
+.env.deploy
