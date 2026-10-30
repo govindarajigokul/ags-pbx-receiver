@@ -82,15 +82,26 @@ function send(res, code, body) {
 const EXT = { 'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/wave': 'wav', 'audio/mpeg': 'mp3', 'audio/gsm': 'gsm' };
 const safe = (v, n = 64) => (v == null ? null : String(v).replace(/[^\w.:+\- /]/g, '').slice(0, n) || null);
 
+// Answering before the body is read makes the proxy cut the upload mid-stream, and the PBX
+// then logs a TLS error instead of the real status. Drain small bodies first; close on big ones.
+function reject(req, res, code, body) {
+  if (Number(req.headers['content-length'] || 0) > MAX_BYTES) {
+    res.setHeader('Connection', 'close');
+    return send(res, code, body);
+  }
+  req.resume();
+  req.on('end', () => send(res, code, body));
+}
+
 async function receive(req, res) {
   const source = sourceFor(req);
-  if (!source) return send(res, 401, { error: 'bad token' });
+  if (!source) return reject(req, res, 401, { error: 'bad token' });
 
   const type = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
   const ext = EXT[type];
-  if (!ext) return send(res, 415, { error: `unsupported content-type ${type}` });
+  if (!ext) return reject(req, res, 415, { error: `unsupported content-type ${type}` });
   const declared = Number(req.headers['content-length'] || 0);
-  if (declared > MAX_BYTES) return send(res, 413, { error: 'too large' });
+  if (declared > MAX_BYTES) return reject(req, res, 413, { error: 'too large' });
 
   // Stream to a temp file while hashing, then move into place: a dropped upload leaves nothing behind.
   const tmp = join(TMP, randomUUID());
